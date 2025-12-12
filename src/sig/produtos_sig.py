@@ -4,7 +4,7 @@ from src.comum.menus_utils import ler_opcao_int, pause
 
 def menu_produtos():
     while True:
-        print("\ PRODUTOS ")
+        print("\nPRODUTOS")
         print("1 - Cadastrar produto")
         print("2 - Listar produtos")
         print("3 - Atualizar produto")

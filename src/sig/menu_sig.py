@@ -4,7 +4,7 @@ from src.sig.produtos_sig import menu_produtos
 
 def menu_principal():
     while True:
-        print("\n=== SIG - Sistema de Informações Gerenciais ===")
+        print("\nSIG - Sistema de Informações Gerenciais")
         print("1 - Clientes")
         print("2 - Produtos")
         print("0 - Sair")

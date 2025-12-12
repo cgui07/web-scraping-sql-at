@@ -41,7 +41,7 @@ def carregar_produtos_csv():
 
 
 def registrar_compra():
-    print("\n=== REGISTRAR COMPRA ===")
+    print("\nREGISTRAR COMPRA")
 
     id_cliente = int(input("Informe o ID do cliente: "))
     cliente = buscar_cliente_por_id(id_cliente)
@@ -99,7 +99,7 @@ def registrar_compra():
 
 
 def fechar_caixa():
-    print("\n=== FECHAMENTO DE CAIXA ===")
+    print("\nFECHAMENTO DE CAIXA")
 
     conn = get_connection()
     cursor = conn.cursor()

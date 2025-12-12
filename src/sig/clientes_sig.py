@@ -5,7 +5,7 @@ from src.comum.repositorio import buscar_cliente_por_nome, buscar_cliente_por_id
 
 def menu_clientes():
     while True:
-        print("\n=== CLIENTES ===")
+        print("\nCLIENTES")
         print("1 - Clientes com compras")
         print("2 - Clientes sem compras")
         print("3 - Top clientes (mais compras)")
@@ -86,7 +86,7 @@ def detalhar_compra(id_compra):
         print("Compra não encontrada.")
         return
 
-    print(f"\n=== NOTA FISCAL ===")
+    print(f"\nNOTA FISCAL")
     print(f"Compra ID: {info[0]}")
     print(f"Data/Hora: {info[1]}")
     print(f"Cliente: {info[2]}\n")

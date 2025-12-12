@@ -9,7 +9,7 @@ from src.caixa.operacoes_caixa import (
 
 def menu_principal():
     while True:
-        print("\n=== SISTEMA DE CAIXA ===")
+        print("SISTEMA DE CAIXA")
         print("1 - Carregar clientes (JSON)")
         print("2 - Carregar produtos (CSV)")
         print("3 - Registrar compra")
