@@ -2,138 +2,115 @@ import json
 import pandas as pd
 from datetime import datetime
 from src.comum.db import get_connection
-from src.comum.repositorio import (
-    buscar_cliente_por_id,
-    buscar_produto_por_id,
-    atualizar_estoque
-)
+from src.comum.repositorio import buscar_cliente_por_id, buscar_produto_por_id
 
 
 def carregar_clientes_json():
-    try:
-        with open("dados/clientes.json", "r", encoding="utf-8") as f:
-            clientes = json.load(f)
+    with open("dados/clientes.json", "r", encoding="utf-8") as f:
+        clientes = json.load(f)
 
-        conn = get_connection()
-        cursor = conn.cursor()
+    conn = get_connection()
+    cursor = conn.cursor()
 
-        for cliente in clientes:
-            cursor.execute("""
-                INSERT OR IGNORE INTO cliente (id_cliente, nome)
-                VALUES (?, ?)
-            """, (cliente["id_cliente"], cliente["nome"]))
+    for cliente in clientes:
+        cursor.execute(
+            "INSERT OR IGNORE INTO cliente (id_cliente, nome) VALUES (?, ?)",
+            (cliente["id_cliente"], cliente["nome"])
+        )
 
-        conn.commit()
-        conn.close()
+    conn.commit()
+    conn.close()
+    print("Clientes carregados com sucesso.")
 
-        print("Clientes carregados com sucesso.")
-
-    except Exception as e:
-        print("Erro ao carregar clientes:", e)
 
 def carregar_produtos_csv():
-    try:
-        df = pd.read_csv("dados/produtos.csv")
+    df = pd.read_csv("dados/produtos.csv")
 
-        conn = get_connection()
-        cursor = conn.cursor()
+    conn = get_connection()
+    cursor = conn.cursor()
 
-        for _, row in df.iterrows():
-            cursor.execute("""
-                INSERT OR REPLACE INTO produto (id_produto, nome, quantidade, preco)
-                VALUES (?, ?, ?, ?)
-            """, (row["id_produto"], row["nome"], row["quantidade"], row["preco"]))
+    for _, row in df.iterrows():
+        cursor.execute(
+            "INSERT OR REPLACE INTO produto (id_produto, nome, quantidade, preco) VALUES (?, ?, ?, ?)",
+            (int(row["id_produto"]), row["nome"], int(row["quantidade"]), float(row["preco"]))
+        )
 
-        conn.commit()
-        conn.close()
+    conn.commit()
+    conn.close()
+    print("Produtos carregados com sucesso.")
 
-        print("Produtos carregados com sucesso.")
-
-    except Exception as e:
-        print("Erro ao carregar produtos:", e)
 
 def registrar_compra():
     print("\n=== REGISTRAR COMPRA ===")
-    
-    try:
-        id_cliente = int(input("Informe o ID do cliente: "))
-        cliente = buscar_cliente_por_id(id_cliente)
 
-        if not cliente:
-            print("Cliente não encontrado.")
-            return
-        
-        print(f"Cliente encontrado: {cliente[1]}")
+    id_cliente = int(input("Informe o ID do cliente: "))
+    cliente = buscar_cliente_por_id(id_cliente)
 
-        conn = get_connection()
-        cursor = conn.cursor()
+    if not cliente:
+        print("Cliente não encontrado.")
+        return
 
-        data_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
-        cursor.execute("""
-            INSERT INTO compra (id_cliente, data_hora)
-            VALUES (?, ?)
-        """, (id_cliente, data_hora))
-        
-        id_compra = cursor.lastrowid
-        print(f"Compra registrada (ID: {id_compra})")
+    print(f"Cliente encontrado: {cliente[1]}")
 
-        # Loop de itens
-        while True:
-            id_produto = int(input("\nInforme o ID do produto (ou 0 para finalizar): "))
+    conn = get_connection()
+    cursor = conn.cursor()
 
-            if id_produto == 0:
-                break
+    data_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    cursor.execute(
+        "INSERT INTO compra (id_cliente, data_hora) VALUES (?, ?)",
+        (id_cliente, data_hora)
+    )
 
-            produto = buscar_produto_por_id(id_produto)
-            if not produto:
-                print("Produto não encontrado.")
-                continue
+    id_compra = cursor.lastrowid
+    itens = {}
 
-            quantidade = int(input("Quantidade: "))
+    while True:
+        id_produto = int(input("\nInforme o ID do produto (ou 0 para finalizar): "))
+        if id_produto == 0:
+            break
 
-            preco_venda = produto[3]  # preço do banco
-            total_item = quantidade * preco_venda
+        produto = buscar_produto_por_id(id_produto)
+        if not produto:
+            print("Produto não encontrado.")
+            continue
 
-            cursor.execute("""
-                INSERT INTO item_compra (id_compra, id_produto, quantidade, preco)
-                VALUES (?, ?, ?, ?)
-            """, (id_compra, id_produto, quantidade, preco_venda))
+        quantidade = int(input("Quantidade: "))
+        itens[id_produto] = itens.get(id_produto, 0) + quantidade
 
-            atualizar_estoque(id_produto, quantidade)
+        print(f"Item adicionado: {produto[1]}")
 
-            print(f"Item adicionado: {produto[1]} (R$ {preco_venda} x {quantidade}) = R$ {total_item}")
+    for id_produto, quantidade_total in itens.items():
+        produto = buscar_produto_por_id(id_produto)
+        preco = produto[3]
 
-        conn.commit()
-        conn.close()
-        print("\nCompra finalizada com sucesso!")
+        cursor.execute(
+            "INSERT INTO item_compra (id_compra, id_produto, quantidade, preco) VALUES (?, ?, ?, ?)",
+            (id_compra, id_produto, quantidade_total, preco)
+        )
 
-    except Exception as e:
-        print("Erro ao registrar compra:", e)
+        cursor.execute(
+            "UPDATE produto SET quantidade = quantidade - ? WHERE id_produto = ?",
+            (quantidade_total, id_produto)
+        )
 
+    conn.commit()
+    conn.close()
+    print("\nCompra finalizada com sucesso!")
 
-# ===============================================================
-# 4. FECHAMENTO DE CAIXA
-# ===============================================================
 
 def fechar_caixa():
     print("\n=== FECHAMENTO DE CAIXA ===")
 
-    try:
-        conn = get_connection()
-        cursor = conn.cursor()
+    conn = get_connection()
+    cursor = conn.cursor()
 
-        cursor.execute("""
-            SELECT SUM(i.quantidade * i.preco)
-            FROM compra c
-            JOIN item_compra i ON i.id_compra = c.id_compra
-        """)
+    cursor.execute("""
+        SELECT SUM(i.quantidade * i.preco)
+        FROM compra c
+        JOIN item_compra i ON i.id_compra = c.id_compra
+    """)
 
-        total = cursor.fetchone()[0] or 0
+    total = cursor.fetchone()[0] or 0
+    print(f"Total vendido até agora: R$ {total:.2f}")
 
-        print(f"Total vendido até agora: R$ {total:.2f}")
-
-        conn.close()
-
-    except Exception as e:
-        print("Erro ao fechar o caixa:", e)
+    conn.close()

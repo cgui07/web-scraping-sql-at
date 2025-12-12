@@ -59,18 +59,13 @@ def listar_produtos():
     return produtos
 
 
-def atualizar_estoque(id_produto, quantidade_vendida):
-    conn = get_connection()
-    cursor = conn.cursor()
-
+def atualizar_estoque(cursor, id_produto, quantidade_vendida):
     cursor.execute("""
         UPDATE produto
         SET quantidade = quantidade - ?
         WHERE id_produto = ?
     """, (quantidade_vendida, id_produto))
 
-    conn.commit()
-    conn.close()
 
 def listar_compras_por_cliente(id_cliente):
     conn = get_connection()
