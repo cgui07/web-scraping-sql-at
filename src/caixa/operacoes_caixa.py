@@ -1,6 +1,7 @@
 import json
 import pandas as pd
 from datetime import datetime
+from src.sig.clientes_sig import detalhar_compra
 from src.comum.db import get_connection
 from src.comum.repositorio import buscar_cliente_por_id, buscar_produto_por_id
 
@@ -117,6 +118,10 @@ def registrar_compra():
             continue
 
         quantidade = int(input("Quantidade: "))
+        if quantidade > produto[2] - itens.get(id_produto, 0): 
+            print(f"Quantidade maior do que tem no estoque({produto[2]})") 
+            continue
+
         itens[id_produto] = itens.get(id_produto, 0) + quantidade
 
         print(f"Item adicionado: {produto[1]}")
@@ -137,6 +142,9 @@ def registrar_compra():
 
     conn.commit()
     conn.close()
+
+    detalhar_compra(id_compra)
+
     print("\nCompra finalizada com sucesso!")
 
 
