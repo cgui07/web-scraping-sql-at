@@ -4,6 +4,48 @@ from datetime import datetime
 from src.comum.db import get_connection
 from src.comum.repositorio import buscar_cliente_por_id, buscar_produto_por_id
 
+def ler_planilha_excel(arquivo, aba):
+    df = pd.read_excel(arquivo, sheet_name=aba)
+    df.columns = df.columns.str.strip().str.lower()
+    return df
+
+def carregar_fornecedores_do_excel():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    df = ler_planilha_excel("dados/fornecedores.xlsx", 'fornecedores')
+
+    contador = 0
+    for _, linha in df.iterrows():
+        cursor.execute(
+            "INSERT OR IGNORE INTO fornecedor (id_fornecedor, nome) VALUES (?, ?)",
+            (linha["id_fornecedor"], linha["nome"])
+        )
+        contador += 1
+
+    conn.commit()
+    conn.close()
+        
+    print(f"{contador} fornecedores carregados com sucesso!")
+
+def carregar_produtos_de_fornecedores_do_excel():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    df = ler_planilha_excel("dados/fornecedores.xlsx", 'produtos-fornecedores')
+
+    contador = 0
+    for _, linha in df.iterrows():
+        cursor.execute(
+            "INSERT OR IGNORE INTO produto_fornecedor (id_produto, id_fornecedor) VALUES (?, ?)",
+            (int(linha["id_produto"]), int(linha["id_fornecedor"])),
+        )
+        contador += 1
+
+    conn.commit()
+    conn.close()
+        
+    print(f"{contador} produtos relacionados com fornecedores!")
 
 def carregar_clientes_json():
     with open("dados/clientes.json", "r", encoding="utf-8") as f:

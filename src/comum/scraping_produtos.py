@@ -38,3 +38,5 @@ def gerar_produtos_csv():
             writer.writerow([idx, nome, quantidade, float(preco)])
 
     print(f"CSV gerado com sucesso em {CSV_DESTINO}")
+if __name__ == "__main__":
+    gerar_produtos_csv()
